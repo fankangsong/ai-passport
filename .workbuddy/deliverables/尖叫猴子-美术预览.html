@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>尖叫猴子 · 美术预览 v1（待评审）</title>
+<style>
+  :root{--ink:#17202A;--muted:#6B7280;--line:#E5E1D8;--paper:#FFFFFF;--bg:#F4F2EC;--accent:#E43B2F}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;font-size:14px;line-height:1.7}
+  .wrap{max-width:900px;margin:0 auto;padding:30px 20px 70px}
+  h1{font-size:22px;font-weight:600;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2{font-size:16px;font-weight:600;margin:34px 0 10px;padding-left:10px;border-left:4px solid #4CAF50}
+  .badge{font-size:12px;font-weight:500;color:#fff;background:#FF9800;border-radius:10px;padding:2px 10px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:8px}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .hero{display:flex;justify-content:center;background:#0F172A00;border-radius:8px}
+  canvas{display:block}
+  #hero{width:100%;max-width:480px;border-radius:8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  button{font:inherit;font-size:13px;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  button.on{border-color:#4CAF50;background:#EAF3DE}
+  .cap{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .grid{display:flex;gap:14px;flex-wrap:wrap}
+  .cell{text-align:center}
+  .cell .lb{font-size:12px;color:var(--muted);margin-top:4px}
+  .sw{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px}
+  .sw span{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+  .sw i{width:15px;height:15px;border-radius:4px;border:1px solid rgba(0,0,0,.15);display:inline-block}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+  th,td{border:1px solid var(--line);padding:6px 10px;text-align:left}
+  th{background:#F6F4EE;font-weight:600}
+  ol.dec{margin:6px 0;padding-left:22px}
+  ol.dec li{margin:7px 0}
+  .note{font-size:12.5px;color:var(--muted);background:#F6F4EE;border-radius:8px;padding:10px 14px;margin-top:14px}
+  code{background:#F1EEE6;border-radius:4px;padding:1px 5px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>《尖叫猴子》美术预览 <span class="badge">v1 · 待评审</span></h1>
+  <div class="sub">240×320 竖屏 · 像素风森林草地 · 本页与固件素材同源（矩阵数据与 <code>sm_art_matrices.mjs</code> 一致，确认后直接生成 RGB565A8 固件资源）</div>
+
+  <h2>1 · 动态场景演示（实景区 240×110，2× 放大）</h2>
+  <div class="panel">
+    <div class="hero"><canvas id="hero" width="480" height="220"></canvas></div>
+    <div class="row">
+      <button id="btnPause">暂停</button>
+      <span class="cap">演示为自动模式：dB 柱随机出现喊叫脉冲，<b>越过阈值 50 的瞬间起跳，脉冲越强跳得越高</b>（对应固件中的连续分贝映射）。</span>
+    </div>
+    <div class="cap">视差：云 0.25× ｜ 中景树 0.5× ｜ 地面纹理 1× ｜ 地面缺口 = 悬崖（坠落即终局） ｜ 右缘 dB 柱 12 段：绿 0–50 / 橙 50–80 / 红 80–100</div>
+  </div>
+
+  <h2>2 · 角色帧预览（24×24）</h2>
+  <div class="panel">
+    <div class="row" style="margin-top:0">
+      <button data-m="run" class="on">跑（动画）</button>
+      <button data-m="jump_up">跳 · 上升</button>
+      <button data-m="jump_down">跳 · 下落</button>
+      <button data-m="hurt">受伤（无敌闪烁）</button>
+      <button data-m="death">死亡（定格）</button>
+    </div>
+    <div class="row"><canvas id="viewer" width="192" height="192" style="background:#EAF4FB;border-radius:8px"></canvas>
+      <div class="cap" style="max-width:330px">造型要点：大头小身、卷尾、米色脸肚、深棕描边；碰撞盒内缩 4px。跑 = 2 帧 10fps 交替；受伤帧在 1.2s 无敌期以 8Hz 闪烁；死亡帧在结算面板 2× 放大展示。</div>
+    </div>
+    <div class="grid" id="gallery" style="margin-top:12px"></div>
+  </div>
+
+  <h2>3 · 调色板（22 色）</h2>
+  <div class="panel">
+    <b style="font-size:13px">角色（7）</b>
+    <div class="sw" id="palA"></div>
+    <b style="font-size:13px">场景（10）</b>
+    <div class="sw" id="palB"></div>
+    <b style="font-size:13px">障碍 / UI</b>
+    <div class="sw" id="palC"></div>
+  </div>
+
+  <h2>4 · 规格速览</h2>
+  <div class="panel">
+    <table>
+      <tr><th>项</th><th>规格</th><th>说明</th></tr>
+      <tr><td>猴子</td><td>24×24 × 6 帧</td><td>跑2 / 跳升1 / 跳降1 / 受伤1 / 死亡1</td></tr>
+      <tr><td>石头</td><td>16×16</td><td>碰撞 → 掉血 + 减速 15s</td></tr>
+      <tr><td>仙人掌</td><td>12×24</td><td>碰撞 → 掉血；血尽终局</td></tr>
+      <tr><td>悬崖</td><td>缺口 34–58px</td><td>坠落直接终局</td></tr>
+      <tr><td>dB 柱</td><td>右缘竖直 12 段</td><td>阈值 50 刻度线；未点亮段 18% 透明度</td></tr>
+      <tr><td>字体</td><td>Noto Sans SC 子集</td><td>正文 16px（约 40 汉字）/ 标题 24px，逐码点覆盖自检</td></tr>
+      <tr><td>素材总量</td><td>≈ 66KB Flash</td><td>精灵 13.4KB + 字体 52KB；app 分区 8128KB，富余 &gt;99%</td></tr>
+    </table>
+  </div>
+
+  <h2>5 · 待确认决策点</h2>
+  <div class="panel">
+    <ol class="dec">
+      <li><b>猴子比例体态</b>：当前 24×24 大头小身卷尾，是否 OK？</li>
+      <li><b>调色板明度</b>：当前明亮卡通森林，偏好更艳 / 更灰？</li>
+      <li><b>死亡表现</b>：当前 X 眼吐舌四肢摊开，备选平躺仰面？</li>
+      <li><b>dB 柱位置</b>：当前右缘竖直 12 段，备选顶部水平条？</li>
+      <li><b>装饰元素</b>：是否加花 / 蘑菇 / 蝴蝶点缀中景与草地？</li>
+    </ol>
+    <div class="note">美术定稿后：矩阵 → <code>tools/gen_sprites.mjs</code> 展开 RGB565A8 → 回看修订开发计划（精灵规格固化进 <code>game_monkey_config.h</code>）→ 你放行后进入实现（分支 <code>feature/scream-monkey</code>，构建 + host 测试 + 合并固件，刷机前另行确认）。</div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+function rep(s,n){var r='';for(var i=0;i<n;i++)r+=s;return r}
+function blank(w,h){var a=[];for(var y=0;y<h;y++)a.push(rep('.',w));return a}
+function put(rows,y,x,s){rows[y]=rows[y].substring(0,x)+s+rows[y].substring(x+s.length)}
+
+var MP={o:'#4A2F14',b:'#8B5A2B',l:'#C89058',f:'#F4E3C2',e:'#FFFFFF',p:'#1B2733',r:'#E43B2F'};
+var D=rep('.',24);
+var H=[D,"....oo"+rep('.',10)+"oo"+rep('.',6),"...ollo"+rep('.',10)+"ollo...",rep('.',5)+rep('o',14)+rep('.',5),"....o"+rep('b',14)+"o....","....ob"+rep('f',12)+"bo....","....ob"+rep('f',12)+"bo....","....obf"+"ee"+rep('f',4)+"ee"+"fff"+"bo....","....obf"+"ep"+rep('f',4)+"ep"+"fff"+"bo....","....ob"+rep('f',12)+"bo....","....ob"+rep('f',12)+"bo....","....ob"+rep('f',4)+"rrrr"+rep('f',4)+"bo....","....ob"+rep('f',12)+"bo....",rep('.',5)+rep('o',14)+rep('.',5)];
+var B=[rep('.',6)+rep('o',12)+rep('.',6),"..olloob"+rep('f',8)+"boollo..","..olloob"+rep('f',8)+"boollo..","..olloob"+rep('f',8)+"boollo..",".llll.ob"+rep('f',8)+"bo......",".llll.o"+rep('b',10)+"o......",rep('.',6)+rep('o',12)+rep('.',6)];
+var L_RUN1=[rep('.',5)+"lll"+rep('.',4)+"llll"+rep('.',8),"....ll"+rep('.',8)+"lll"+rep('.',7),D];
+var L_RUN2=[rep('.',6)+"lll"+rep('.',4)+"llll"+rep('.',7),rep('.',6)+"ll"+rep('.',8)+"lll"+rep('.',5),D];
+var L_J1=[rep('.',7)+"lll"+rep('.',2)+"lll"+rep('.',9),D,D];
+var L_J2=[rep('.',6)+"lll"+rep('.',4)+"lll"+rep('.',8),rep('.',6)+"ll"+rep('.',7)+"lll"+rep('.',6),D];
+var L_D=[rep('.',4)+"lll"+rep('.',10)+"lll"+rep('.',4),"...ll"+rep('.',14)+"ll...",D];
+function frame(legs,over){var r=H.concat(B,legs);if(over)for(var k in over)r[+k]=over[k];return r}
+var hO={4:"....o"+"bbbb"+"rr"+rep('b',8)+"o....",7:"....obf"+"pfp"+"ff"+"pfp"+"fff"+"bo....",8:"....obf"+"fp"+rep('f',4)+"p"+"ffff"+"bo....",11:"....ob"+rep('f',3)+rep('r',7)+"ff"+"bo....",12:"....ob"+rep('f',4)+"rrr"+rep('f',5)+"bo...."};
+var dO={4:hO[4],7:hO[7],8:hO[8],11:hO[11],12:hO[12],18:"lllll.ob"+rep('f',8)+"bo......",19:"lllll.ob"+rep('b',10)+"o......"};
+var SPR={
+  run1:frame(L_RUN1),run2:frame(L_RUN2,{17:"llolloob"+rep('f',8)+"boollo.."}),
+  jump_up:frame(L_J1),jump_down:frame(L_J2),
+  hurt:frame(L_RUN1,hO),death:frame(L_D,dO)
+};
+var STONE=blank(16,16);
+put(STONE,1,5,rep('o',6));put(STONE,2,4,'oSSSSSso');put(STONE,3,3,'oSSSSsssso');put(STONE,4,2,'oSSSssssssdo');put(STONE,5,2,'oSSssssssddo');put(STONE,6,1,'oSSsssssssddo');put(STONE,7,1,'oSSsssssssdddo');put(STONE,8,1,'oSsssssddsssdo');put(STONE,9,1,'osssssddssssdo');put(STONE,10,1,'ossssddsssssdo');put(STONE,11,1,'osssssssssdddo');put(STONE,12,2,'ossssssssddo');put(STONE,13,3,'osssssssdo');put(STONE,14,4,'oodddoo');
+var PS={o:'#3E4750',S:'#C2CBD0',s:'#9AA5AB',d:'#6E787E'};
+var CACTUS=blank(12,24);
+put(CACTUS,0,4,'gggg');put(CACTUS,1,4,'gCCg');put(CACTUS,2,4,'gCCg');put(CACTUS,3,4,'gccg');put(CACTUS,4,0,'gg');put(CACTUS,4,4,'gccg');put(CACTUS,5,0,'gcg');put(CACTUS,5,4,'gccg');put(CACTUS,6,0,'gcgg');put(CACTUS,6,4,'gccg');put(CACTUS,7,0,'gccc');put(CACTUS,7,4,'gccg');put(CACTUS,8,0,'ggggg');put(CACTUS,8,5,'ccg');put(CACTUS,9,4,'gccg');put(CACTUS,10,4,'gccg');put(CACTUS,10,8,'gg');put(CACTUS,11,4,'gccg');put(CACTUS,11,8,'gcg');put(CACTUS,12,4,'gccg');put(CACTUS,12,8,'gcg');put(CACTUS,13,4,'gccg');put(CACTUS,13,8,'gcg');put(CACTUS,14,4,'gccg');put(CACTUS,14,8,'gggg');put(CACTUS,15,4,'gccg');put(CACTUS,16,4,'gccg');put(CACTUS,17,1,'w');put(CACTUS,17,4,'gccg');put(CACTUS,17,10,'w');put(CACTUS,18,4,'gccg');put(CACTUS,19,1,'w');put(CACTUS,19,4,'gccg');put(CACTUS,19,10,'w');put(CACTUS,20,4,'gccg');put(CACTUS,21,3,'ggccgg');put(CACTUS,22,2,rep('g',8));
+var PC={g:'#1E5B25',c:'#3E8E41',C:'#5FAF62',w:'#E8F5E9'};
+var TREE=blank(16,16);
+put(TREE,0,4,rep('t',6));put(TREE,1,2,'ttTTTTTTtt');put(TREE,2,1,'ttTTTTTTTTtt');put(TREE,3,1,'tTTTTTTTTTTt');put(TREE,4,0,'tTTTTTTTTTTTTt');put(TREE,5,0,'tTTTTTTTTTTTTt');put(TREE,6,1,'tTTTTTTTTTTt');put(TREE,7,1,'ttTTTTTTTTtt');put(TREE,8,2,'tttTTTTttt');put(TREE,9,4,rep('t',7));put(TREE,10,6,'kkk');put(TREE,11,6,'kkk');put(TREE,12,6,'kkk');put(TREE,13,6,'kkk');put(TREE,14,5,'kkkkk');
+var PT={t:'#4E9B47',T:'#2E7D32',k:'#6B4226'};
+var CLOUD=blank(16,6);
+put(CLOUD,0,4,rep('w',4));put(CLOUD,1,2,rep('w',9));put(CLOUD,2,1,rep('w',12));put(CLOUD,3,0,rep('w',14));put(CLOUD,4,1,rep('w',12));put(CLOUD,5,2,rep('w',7));
+var PW={w:'#FFFFFF'};
+var HEART=blank(10,10);
+put(HEART,1,1,'oo');put(HEART,1,7,'oo');put(HEART,2,0,'oRRoooorro');put(HEART,3,0,'oRrrrrrrro');put(HEART,4,0,'orrrrrrrro');put(HEART,5,1,'orrrrrro');put(HEART,6,2,'orrrro');put(HEART,7,3,'orro');put(HEART,8,4,'oo');
+var PH={o:'#7A1E14',R:'#FF6F5E',r:'#E43B2F'};
+
+function blit(g,rows,pal,s,ox,oy,alpha){
+  if(alpha!==undefined&&alpha<=0)return;
+  if(alpha!==undefined)g.globalAlpha=alpha;
+  for(var y=0;y<rows.length;y++)for(var x=0;x<rows[y].length;x++){
+    var k=rows[y].charAt(x);if(pal[k]){g.fillStyle=pal[k];g.fillRect(ox+x*s,oy+y*s,s,s)}
+  }
+  if(alpha!==undefined)g.globalAlpha=1;
+}
+
+/* ============ 动态场景演示 ============ */
+var W=240,HG=110,GROUND=84,SC=2,SPEED=110,GRAV=900,MONX=36;
+var cvH=document.getElementById('hero'),g=cvH.getContext('2d');
+var st={t:0,meters:0,obs:[],spawnT:1.0,cloudOff:0,treeOff:0,grassOff:0,
+        h:0,vh:0,air:false,runF:0,runT:0,level:22,burst:0,burstT:0,flash:0,dust:[],paused:false};
+function rnd(a,b){return a+Math.random()*(b-a)}
+function jumpTo(bl){st.vh=230+(bl-50)*(315-230)/45;st.air=true;st.flash=0.35;st.burst=bl;st.burstT=0.38}
+function update(dt){
+  st.t+=dt;st.meters+=SPEED*dt/8;
+  st.cloudOff=(st.cloudOff+SPEED*0.25*dt)%280;st.treeOff=(st.treeOff+SPEED*0.5*dt)%48;st.grassOff+=SPEED*dt;
+  st.spawnT-=dt;
+  if(st.spawnT<=0){var r=Math.random(),type=r<0.4?'stone':(r<0.75?'cactus':'gap');
+    st.obs.push({type:type,x:248,w:type==='stone'?16:(type==='cactus'?12:34+Math.random()*7|0),trig:false});
+    st.spawnT=rnd(1.6,2.4);}
+  for(var i=st.obs.length-1;i>=0;i--){var ob=st.obs[i];ob.x-=SPEED*dt;
+    var d=ob.x-(MONX+20),thr=ob.type==='gap'?30:46;
+    if(!ob.trig&&!st.air&&d<thr){ob.trig=true;
+      jumpTo(ob.type==='gap'?rnd(86,95):rnd(68,88));}
+    if(ob.x+ob.w<-12)st.obs.splice(i,1);}
+  if(st.air){st.vh-=GRAV*dt;st.h+=st.vh*dt;
+    if(st.h<=0){st.h=0;st.air=false;
+      for(var k=0;k<3;k++)st.dust.push({x:MONX+4+k*6,y:GROUND-2,vx:rnd(-14,26),vy:rnd(-34,-10),life:rnd(0.3,0.45)});}}
+  for(var j=st.dust.length-1;j>=0;j--){var p=st.dust[j];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt;p.life-=dt;if(p.life<=0)st.dust.splice(j,1)}
+  var base=22+8*Math.sin(st.t*2.3)+3*Math.sin(st.t*5.7);
+  var cur=st.burstT>0?st.burst:base;if(st.burstT>0)st.burstT-=dt;
+  st.level+=(cur-st.level)*Math.min(1,dt*16);
+  if(st.flash>0)st.flash-=dt;
+  if(!st.air){st.runT+=dt;if(st.runT>=0.1){st.runT=0;st.runF=1-st.runF}}
+}
+function drawSeg(a,b){
+  if(b<=a)return;
+  g.fillStyle='#82BE2D';g.fillRect(a*SC,GROUND*SC,(b-a)*SC,8);
+  g.fillStyle='#75452E';g.fillRect(a*SC,(GROUND+4)*SC,(b-a)*SC,44);
+  g.fillStyle='#55951D';
+  var off=st.grassOff%24;
+  for(var wx=-off;wx<240;wx+=24){var dx=Math.max(wx,a),dw=Math.min(wx+10,b)-dx;if(dw>0)g.fillRect(dx*SC,(GROUND+1)*SC,dw*SC,3)}
+  g.fillStyle='#4A2C1B';
+  var off2=st.grassOff%36;
+  function dot(wx,a,b){var x0=Math.max(wx,a),x1=Math.min(wx+3,b);if(x1-x0>0){g.fillRect(x0*SC,(GROUND+12)*SC,(x1-x0)*SC,4);g.fillRect((x0+9)*SC,(GROUND+19)*SC,(x1-x0)*SC,4)}}
+  for(var ux=-off2+12;ux<240;ux+=36)dot(ux,a,b);
+}
+function drawHero(){
+  g.fillStyle='#9CE0FF';g.fillRect(0,0,480,220);
+  var c1=((40-st.cloudOff)%280+280)%280-20,c2=((190-st.cloudOff)%280+280)%280-20;
+  blit(g,CLOUD,PW,2,c1*SC,14*SC);blit(g,CLOUD,PW,2,c2*SC,44*SC);
+  for(var i=0;i<7;i++){var tx=i*48-st.treeOff;if(tx>-18&&tx<244)blit(g,TREE,PT,2,tx*SC,(GROUND-16)*SC)}
+  var segs=[[0,240]];
+  var gaps=st.obs.filter(function(o){return o.type==='gap'});
+  gaps.forEach(function(gp){var ns=[];segs.forEach(function(s){
+    if(gp.x>=s[1]||gp.x+gp.w<=s[0]){ns.push(s);return}
+    if(gp.x>s[0])ns.push([s[0],gp.x]);if(gp.x+gp.w<s[1])ns.push([gp.x+gp.w,s[1]]);});
+    segs=ns;});
+  segs.forEach(function(s){drawSeg(s[0],s[1])});
+  gaps.forEach(function(gp){
+    g.fillStyle='#2B1B0E';g.fillRect(gp.x*SC,GROUND*SC,gp.w*SC,52);
+    g.fillStyle='#4A2C1B';g.fillRect(gp.x*SC,GROUND*SC,3,52);g.fillRect((gp.x+gp.w)*SC-3,GROUND*SC,3,52);
+    g.fillStyle='#6B4A2E';g.fillRect(gp.x*SC,GROUND*SC,1.5,52);g.fillRect((gp.x+gp.w)*SC-1.5,GROUND*SC,1.5,52);});
+  st.obs.forEach(function(ob){
+    if(ob.type==='stone')blit(g,STONE,PS,2,ob.x*SC,(GROUND-16)*SC);
+    else if(ob.type==='cactus')blit(g,CACTUS,PC,2,ob.x*SC,(GROUND-24)*SC);});
+  var fr=!st.air?SPR[st.runF?'run2':'run1']:(st.vh>0?SPR.jump_up:SPR.jump_down);
+  blit(g,fr,MP,2,MONX*SC,(GROUND-24-st.h)*SC);
+  st.dust.forEach(function(p){g.fillStyle='#75452E';g.globalAlpha=Math.max(0,p.life*2.4);g.fillRect(p.x*SC,p.y*SC,4,4);g.globalAlpha=1});
+  if(st.flash>0){g.fillStyle='rgba(228,59,47,'+Math.min(1,st.flash*3).toFixed(2)+')';g.font='500 14px sans-serif';g.fillText('喊!',MONX*SC+8,(GROUND-30-st.h)*SC)}
+  blit(g,HEART,PH,2,116,10);blit(g,HEART,PH,2,142,10);blit(g,HEART,PH,2,168,10);
+  g.fillStyle='#17202A';g.font='500 14px sans-serif';g.fillText('里程 '+Math.floor(st.meters)+' 米',16,26);
+  var cols=['#4CAF50','#FF9800','#F44336'];
+  for(var s=0;s<12;s++){g.globalAlpha=s<Math.round(st.level/100*12)?1:0.18;
+    g.fillStyle=cols[s<6?0:(s<9?1:2)];g.fillRect(428,94-8*s,22,6)}
+  g.globalAlpha=1;
+  g.fillStyle='#17202A';g.fillRect(424,52,32,2);
+  g.font='11px sans-serif';g.fillText('50',458,60);g.fillText('分贝',394,14);
+}
+var last=0;
+function loop(ts){
+  var dt=Math.min(0.04,(ts-last)/1000||0.016);last=ts;
+  if(!st.paused){update(dt);drawHero();drawViewer(dt)}
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+document.getElementById('btnPause').addEventListener('click',function(){
+  st.paused=!st.paused;this.textContent=st.paused?'继续':'暂停';this.className=st.paused?'on':'';
+});
+
+/* ============ 角色帧预览 ============ */
+var modes=['run','jump_up','jump_down','hurt','death'];
+var mode='run',vT=0;
+var cvV=document.getElementById('viewer'),gv=cvV.getContext('2d');
+function drawViewer(dt){
+  vT+=dt;gv.clearRect(0,0,192,192);
+  if(mode==='run'){blit(gv,SPR[vT%0.2<0.1?'run1':'run2'],MP,8,0,0)}
+  else if(mode==='hurt'){var on=vT%0.25<0.125;blit(gv,SPR.hurt,MP,8,0,0,on?1:0.25)}
+  else blit(gv,SPR[mode],MP,8,0,0);
+}
+document.querySelectorAll('button[data-m]').forEach(function(b){
+  b.addEventListener('click',function(){mode=b.getAttribute('data-m');vT=0;
+    document.querySelectorAll('button[data-m]').forEach(function(x){x.className=''});b.className='on';});
+});
+
+/* ============ 帧画廊 ============ */
+var GAL=[['run1','跑 · 帧1'],['run2','跑 · 帧2'],['jump_up','跳 · 上升'],['jump_down','跳 · 下落'],['hurt','受伤'],['death','死亡']];
+var gal=document.getElementById('gallery');
+GAL.forEach(function(it){
+  var cell=document.createElement('div');cell.className='cell';
+  var c=document.createElement('canvas');c.width=120;c.height=120;c.style.background='#EAF4FB';c.style.borderRadius='8px';
+  var gg=c.getContext('2d');blit(gg,SPR[it[0]],MP,5,0,0);
+  var lb=document.createElement('div');lb.className='lb';lb.textContent=it[1];
+  cell.appendChild(c);cell.appendChild(lb);gal.appendChild(cell);
+});
+
+/* ============ 调色板 ============ */
+function palRow(id,items){var pw=document.getElementById(id);
+  items.forEach(function(p){var s=document.createElement('span');
+    s.innerHTML='<i style="background:'+p[1]+'"></i>'+p[0];pw.appendChild(s)})}
+palRow('palA',[['描边 #4A2F14','#4A2F14'],['体毛 #8B5A2B','#8B5A2B'],['手脚耳尾 #C89058','#C89058'],['脸肚 #F4E3C2','#F4E3C2'],['眼白 #FFFFFF','#FFFFFF'],['瞳/墨 #1B2733','#1B2733'],['嘴伤红 #E43B2F','#E43B2F']]);
+palRow('palB',[['天空 #9CE0FF','#9CE0FF'],['云 #FFFFFF','#FFFFFF'],['树冠 #2E7D32','#2E7D32'],['树冠亮 #4E9B47','#4E9B47'],['树干 #6B4226','#6B4226'],['草 #82BE2D','#82BE2D'],['草深 #55951D','#55951D'],['土 #75452E','#75452E'],['土深 #4A2C1B','#4A2C1B'],['崖坑 #2B1B0E','#2B1B0E']]);
+palRow('palC',[['石 #9AA5AB','#9AA5AB'],['石亮 #C2CBD0','#C2CBD0'],['石暗 #6E787E','#6E787E'],['掌绿 #3E8E41','#3E8E41'],['掌亮 #5FAF62','#5FAF62'],['刺 #E8F5E9','#E8F5E9'],['心红 #E43B2F','#E43B2F'],['心亮 #FF6F5E','#FF6F5E'],['柱绿 #4CAF50','#4CAF50'],['柱橙 #FF9800','#FF9800'],['柱红 #F44336','#F44336'],['HUD纸 #F4F4EA','#F4F4EA']]);
+})();
+</script>
+</body>
+</html>
