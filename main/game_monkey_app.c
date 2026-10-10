@@ -43,6 +43,7 @@ static sm_world_t s_world;
 static sm_detector_t s_detector;
 static bool s_shout_armed;
 static bool s_session_active;               // 一局是否在进行(含 OVER)
+static uint32_t s_calib_ms;                 // CALIB 阶段已耗时(超时兜底)
 static sm_score_t s_board[SM_BOARD_N];
 static uint8_t s_board_count;
 static uint32_t s_title_ticks;              // 标题屏跑步动画分频
@@ -155,6 +156,7 @@ static void start_session(void) {
     sm_detector_reset_session(&s_detector);
     s_shout_armed = true;
     s_session_active = true;
+    s_calib_ms = 0;
     sm_ui_game_build();
 }
 
@@ -206,6 +208,14 @@ static void game_tick(lv_timer_t *timer) {
     build_ui_state(&st);
 
     if (s_world.phase == SM_PHASE_CALIB) {
+        // 校准完成(约 300ms)即开跑;3s 超时兜底,避免音频异常时永远卡在校准屏。
+        s_calib_ms += SM_UI_TICK_MS;
+        if (s_detector.primed || s_calib_ms >= 3000u) {
+            if (!s_detector.primed) {
+                ESP_LOGW(TAG, "校准超时,跳过噪声标定直接开跑");
+            }
+            sm_world_begin_run(&s_world);
+        }
         const uint8_t done = SM_CALIB_CHUNKS - s_detector.calib_left;
         st.calib_percent = (uint8_t)(done * 100u / SM_CALIB_CHUNKS);
         sm_ui_game_sync(&st);
@@ -286,6 +296,12 @@ void sm_app_key(bsp_btn_t btn, bsp_btn_ev_t ev) {
     } else if (s_session_active && s_world.phase == SM_PHASE_OVER) {
         if (ev == BSP_BTN_CLICK && btn == BSP_BTN_OK) start_game_locked();
         else if (ev == BSP_BTN_CLICK && btn == BSP_BTN_UP) show_title();
+    } else if (s_session_active) {
+        // 游戏进行中:UP 短按 = 放弃本局回标题(逃生口)。
+        if (ev == BSP_BTN_CLICK && btn == BSP_BTN_UP) {
+            s_session_active = false;
+            show_title();
+        }
     }
     bsp_lvgl_unlock();
 }
