@@ -524,7 +524,8 @@ void sm_ui_font_covers(void) {
             }
             if (len == 1) continue;   // ASCII 由 Montserrat/内置兜底
             lv_font_glyph_dsc_t dsc;
-            if (!lv_font_get_glyph_dsc(font, &dsc, b0, cp)) {
+            /* letter 参数是完整码点(非 UTF-8 首字节),与 lv_label 渲染路径一致 */
+            if (!lv_font_get_glyph_dsc(font, &dsc, cp, cp)) {
                 ESP_LOGW(TAG, "sm_font_16 缺字形 U+%04lX (%s)", (unsigned long)cp,
                          k_sm_text[i]);
             }
