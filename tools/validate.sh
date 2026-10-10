@@ -57,6 +57,22 @@ run_static_checks() {
         tests/test_bsp_audio_recovery.c components/bsp/src/bsp_es8311_sleep_check.c \
         -o "${test_dir}/test_bsp_audio_recovery"
     "${test_dir}/test_bsp_audio_recovery"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_game_monkey_world.c main/game_monkey_world.c \
+        -o "${test_dir}/test_game_monkey_world"
+    "${test_dir}/test_game_monkey_world"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_game_monkey_detector.c main/game_monkey_detector.c \
+        -o "${test_dir}/test_game_monkey_detector"
+    "${test_dir}/test_game_monkey_detector"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_game_monkey_sfx.c main/game_monkey_sfx.c \
+        -o "${test_dir}/test_game_monkey_sfx"
+    "${test_dir}/test_game_monkey_sfx"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_game_monkey_board.c main/game_monkey_board.c \
+        -o "${test_dir}/test_game_monkey_board"
+    "${test_dir}/test_game_monkey_board"
     for demo in audio low_power ble wifi; do
         "${CC:-cc}" -std=c11 -Wall -Wextra -Werror \
             -ffunction-sections -fdata-sections -Itests/demo_stubs -Imain \
@@ -66,6 +82,7 @@ run_static_checks() {
     done
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_deep_sleep_contract.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_key_wake_contract.py
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_font_coverage.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_check_repo.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_verify_firmware.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_archive_firmware.py

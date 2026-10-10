@@ -5,6 +5,10 @@ managed_components/
 .vscode/
 .idea/
 
+# AI 工作区数据(会话日志/交付物/本机字体缓存),非仓库文档,不入库、
+# 也不参与文档成对维护检查。
+/.workbuddy/
+
 # Generated repository-local links; canonical skill sources live in skills/.
 /.agents/skills/passport-develop
 /.agents/skills/passport-setup
